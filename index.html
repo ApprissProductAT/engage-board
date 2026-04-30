@@ -58,6 +58,8 @@ var MONTH_COLORS = {
 };
 var MONTHS = ["TBD","JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 
+var MONTH_TO_QUARTER = { JANUARY:"Q1",FEBRUARY:"Q1",MARCH:"Q1",APRIL:"Q2",MAY:"Q2",JUNE:"Q2",JULY:"Q3",AUGUST:"Q3",SEPTEMBER:"Q3",OCTOBER:"Q4",NOVEMBER:"Q4",DECEMBER:"Q4" };
+
 var PLP_PHASES = [
   { id: "what", num: 1, label: "What", title: "Signal Intake & Continuous Insight", desc: "Continuously surface customer, market, and competitive signals to maintain a shared view of priorities." },
   { id: "why", num: 2, label: "Why", title: "Signal Validation & De-Risking", desc: "Validate & score initiatives on business impact, demand, feasibility, and risk before committing resources." },
@@ -83,7 +85,7 @@ var QUARTERS = [
   { value: "Q4", label: "Q4", bg: "#ede9fe", text: "#5b21b6", border: "#ddd6fe" },
 ];
 
-// Q2 board (unchanged)
+// Drill-down lanes
 var Q2_LANES = [
   { id: "on-hold", label: "On Hold" },
   { id: "at-risk", label: "At Risk" },
@@ -102,7 +104,6 @@ var INITIAL_PLP = [
   { id: "p14", month: "JULY", name: "Remaining Portal Items: TBD", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
   { id: "p15", month: "AUGUST", name: "Engage Portal Decomm", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
   { id: "102", month: "JULY", name: "Claims Automation (Gap Inc.)", phase: "why", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p21", month: "JUNE", name: "Disputes Management 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
   { id: "p16", month: "MAY", name: "Consumer Alerts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
   { id: "p18", month: "JUNE", name: "Engage Insights 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Finalize scope & GTM plan; finish Linking 2.0", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
   { id: "p17", month: "MAY", name: "Consumer Watching", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
@@ -115,9 +116,10 @@ var INITIAL_PLP = [
   { id: "p7", month: "JUNE", name: "Decision Studio: Flagged Consumers", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
   { id: "p8", month: "JUNE", name: "Decision Studio: Flagged Receipts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
   { id: "p1", month: "TBD", name: "Decision Studio 2.0: Landing Page/ Dashboard", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p21", month: "JUNE", name: "Disputes Management 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
 ];
 
-var INITIAL_BSC = {"100":"design","101":"gathering-reqs","p16":"writing-reqs","p17":"gathering-reqs","p21":"writing-reqs","p12":"development","p18":"gathering-reqs","p19":"gathering-reqs","p20":"gathering-reqs","p11":"gathering-reqs","p6":"design","p7":"design","p8":"design"};
+var INITIAL_SCM = {"100":"design","101":"gathering-reqs","p16":"writing-reqs","p17":"gathering-reqs","p21":"writing-reqs","p12":"development","p18":"gathering-reqs","p19":"gathering-reqs","p20":"gathering-reqs","p11":"gathering-reqs","p6":"design","p7":"design","p8":"design"};
 
 var gNextId = 103;
 
@@ -176,25 +178,23 @@ function PLPBoard(props) {
   var _fm = useState("TBD"); var formMonth = _fm[0]; var setFormMonth = _fm[1];
   var _fn = useState(""); var formName = _fn[0]; var setFormName = _fn[1];
   var _fq = useState(""); var formQuarter = _fq[0]; var setFormQuarter = _fq[1];
-  var _fe = useState(""); var formExit = _fe[0]; var setFormExit = _fe[1];
   var _fj = useState(""); var formJira = _fj[0]; var setFormJira = _fj[1];
   var _sl = useState(true); var showLegend = _sl[0]; var setShowLegend = _sl[1];
   var _ei = useState(null); var editId = _ei[0]; var setEditId = _ei[1];
   var _em = useState(""); var editMonth = _em[0]; var setEditMonth = _em[1];
   var _en = useState(""); var editName = _en[0]; var setEditName = _en[1];
   var _eq = useState(""); var editQuarter = _eq[0]; var setEditQuarter = _eq[1];
-  var _ee = useState(""); var editExit = _ee[0]; var setEditExit = _ee[1];
   var _ej = useState(""); var editJira = _ej[0]; var setEditJira = _ej[1];
 
   var fs = { month: 9.5, name: 12, exit: 10.5, close: 11, pad: "6px 8px", mb: 2 };
 
   function startEdit(item) {
     setEditId(item.id); setEditMonth(item.month); setEditName(item.name);
-    setEditQuarter(item.quarter || ""); setEditExit(item.exitCriteria || ""); setEditJira(item.jiraLink || "");
+    setEditQuarter(item.quarter || ""); setEditJira(item.jiraLink || "");
   }
   function saveEdit() {
     if (!editName.trim()) return;
-    var upd = { month: editMonth, name: editName.trim(), quarter: editQuarter, exitCriteria: editExit.trim(), jiraLink: editJira.trim() };
+    var upd = { month: editMonth, name: editName.trim(), quarter: editQuarter, jiraLink: editJira.trim() };
     updateItems(function(prev) {
       return prev.map(function(it) { return it.id === editId ? Object.assign({}, it, upd) : it; });
     });
@@ -234,9 +234,9 @@ function PLPBoard(props) {
 
   function addItem() {
     if (!formName.trim()) return;
-    var newItem = { id: String(gNextId++), month: formMonth, name: formName.trim(), phase: addingTo, quarter: formQuarter, row: "on-track", exitCriteria: formExit.trim(), jiraLink: formJira.trim() };
+    var newItem = { id: String(gNextId++), month: formMonth, name: formName.trim(), phase: addingTo, quarter: formQuarter, row: "on-track", exitCriteria: "", jiraLink: formJira.trim() };
     updateItems(function(prev) { return prev.concat([newItem]); });
-    setFormName(""); setFormQuarter(""); setFormExit(""); setFormJira(""); setAddingTo(null);
+    setFormName(""); setFormQuarter(""); setFormJira(""); setAddingTo(null);
   }
   function removeItem(id) {
     updateItems(function(prev) { return prev.filter(function(it) { return it.id !== id; }); });
@@ -245,7 +245,7 @@ function PLPBoard(props) {
   function renderEditForm(it) {
     return (
       <div key={it.id} style={{ border: "1.5px solid #14b8a6", borderRadius: 5, padding: 8, background: "#f0fdfa" }}>
-        <select value={editMonth} onChange={function(e) { setEditMonth(e.target.value); }}
+        <select value={editMonth} onChange={function(e) { var m = e.target.value; setEditMonth(m); if (MONTH_TO_QUARTER[m]) setEditQuarter(MONTH_TO_QUARTER[m]); }}
           style={{ width: "100%", marginBottom: 4, padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
           {MONTHS.map(function(m) { return <option key={m} value={m}>{m}</option>; })}
         </select>
@@ -257,10 +257,6 @@ function PLPBoard(props) {
           style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", marginBottom: 4 }}>
           {QUARTERS.map(function(q) { return <option key={q.value} value={q.value}>{q.value || "No quarter"}</option>; })}
         </select>
-        <input value={editExit} onChange={function(e) { setEditExit(e.target.value.slice(0, 100)); }} maxLength={100}
-          placeholder="Exit path..."
-          onKeyDown={function(e) { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-          style={{ width: "100%", padding: "4px 5px", fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box", color: "#475569" }} />
         <input value={editJira} onChange={function(e) { setEditJira(e.target.value); }}
           placeholder="Jira link..."
           onKeyDown={function(e) { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
@@ -304,11 +300,6 @@ function PLPBoard(props) {
             )}
           </div>
           <div style={{ fontSize: fs.name, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, paddingRight: 10 }}>{it.name || "(untitled)"}</div>
-          {it.exitCriteria && (
-            <div style={{ fontSize: fs.exit, color: "#94a3b8", fontWeight: 400, lineHeight: 1.3, marginTop: fs.mb, paddingRight: 10, wordBreak: "break-word" }}>
-              EXIT: {it.exitCriteria}
-            </div>
-          )}
           {it.jiraLink && (
             <div style={{ marginTop: 2, paddingRight: 10 }}>
               <a href={it.jiraLink} target="_blank" rel="noopener noreferrer"
@@ -329,7 +320,7 @@ function PLPBoard(props) {
   function renderAddForm() {
     return (
       <div style={{ border: "1.5px dashed #94a3b8", borderRadius: 5, padding: 8, background: "#f8fafc" }}>
-        <select value={formMonth} onChange={function(e) { setFormMonth(e.target.value); }}
+        <select value={formMonth} onChange={function(e) { var m = e.target.value; setFormMonth(m); if (MONTH_TO_QUARTER[m]) setFormQuarter(MONTH_TO_QUARTER[m]); }}
           style={{ width: "100%", marginBottom: 4, padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
           {MONTHS.map(function(m) { return <option key={m} value={m}>{m}</option>; })}
         </select>
@@ -340,10 +331,6 @@ function PLPBoard(props) {
           style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", marginBottom: 4 }}>
           {QUARTERS.map(function(q) { return <option key={q.value} value={q.value}>{q.value || "No quarter"}</option>; })}
         </select>
-        <input value={formExit} onChange={function(e) { setFormExit(e.target.value.slice(0, 100)); }} maxLength={100}
-          placeholder="Exit path..."
-          onKeyDown={function(e) { if (e.key === "Enter") addItem(); if (e.key === "Escape") setAddingTo(null); }}
-          style={{ width: "100%", padding: "4px 5px", fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box", color: "#475569" }} />
         <input value={formJira} onChange={function(e) { setFormJira(e.target.value); }}
           placeholder="Jira link..."
           onKeyDown={function(e) { if (e.key === "Enter") addItem(); if (e.key === "Escape") setAddingTo(null); }}
@@ -351,7 +338,7 @@ function PLPBoard(props) {
         <div style={{ display: "flex", gap: 4 }}>
           <button onClick={addItem}
             style={{ flex: 1, padding: "4px 0", fontSize: 10, fontWeight: 600, background: "#0d9488", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Add</button>
-          <button onClick={function() { setAddingTo(null); setFormName(""); setFormQuarter(""); setFormExit(""); setFormJira(""); }}
+          <button onClick={function() { setAddingTo(null); setFormName(""); setFormQuarter(""); setFormJira(""); }}
             style={{ flex: 1, padding: "4px 0", fontSize: 10, background: "#e2e8f0", border: "none", borderRadius: 4, cursor: "pointer", color: "#475569" }}>Cancel</button>
         </div>
       </div>
@@ -416,7 +403,7 @@ function PLPBoard(props) {
               })}
               {addingTo === lane.id ? renderAddForm() : (
                 <button
-                  onClick={function() { setAddingTo(lane.id); setFormMonth("TBD"); setFormName(""); setFormQuarter(""); setFormExit(""); setFormJira(""); }}
+                  onClick={function() { setAddingTo(lane.id); setFormMonth("TBD"); setFormName(""); setFormQuarter(""); setFormJira(""); }}
                   style={{
                     border: "1.5px dashed #cbd5e1", borderRadius: 5, padding: "10px 0",
                     background: "transparent", color: "#94a3b8", cursor: "pointer",
@@ -441,7 +428,6 @@ function PLPBoard(props) {
                 <QuarterPill quarter="Q2" />
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Committed Body of Work</div>
-              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 400, marginTop: 2 }}>EXIT: Exit criteria text...</div>
               <div style={{ fontSize: 10, color: "#3B82F6", fontWeight: 500, marginTop: 2 }}>Link to Jira</div>
             </div>
           </div>
@@ -481,10 +467,10 @@ function PLPBoard(props) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Q2 Board — derived view of PLP items where quarter=Q2
-// Phase rows with down-arrow chevrons, Build row has sub-columns
+// Drill-Down Board — generic component for Q2/Q3/Q4 drill-downs
+// Phase rows with collapsible sub-columns
 // ═══════════════════════════════════════════════════════════════════
-var Q2_PHASE_ROWS = [
+var DRILL_PHASE_ROWS = [
   { id: "what", num: 1, label: "What" },
   { id: "why", num: 2, label: "Why" },
   { id: "when", num: 3, label: "When" },
@@ -492,10 +478,29 @@ var Q2_PHASE_ROWS = [
   { id: "launch", num: 5, label: "Launch" },
   { id: "measure", num: 6, label: "Measure" },
 ];
-var Q2_SUBCOLS = {
-  what: [{ id: "tbd", label: "TBD" }],
-  why: [{ id: "tbd", label: "TBD" }],
-  when: [{ id: "tbd", label: "TBD" }],
+
+var DRILL_SUBCOLS = {
+  what: [
+    { id: "new", label: "New" },
+    { id: "triage", label: "Triage" },
+    { id: "evidence", label: "Evidence Gathering" },
+    { id: "ready-validation", label: "Ready for Validation" },
+  ],
+  why: [
+    { id: "new", label: "New" },
+    { id: "prd-writing", label: "PRD Writing" },
+    { id: "rice", label: "RICE Evaluation" },
+    { id: "feasibility", label: "Feasibility & Risk Review" },
+    { id: "approved", label: "Approved for Roadmap Consideration" },
+  ],
+  when: [
+    { id: "new", label: "New" },
+    { id: "dependency", label: "Dependency & Capacity Review" },
+    { id: "sequencing", label: "Quarterly Sequencing" },
+    { id: "lt-alignment", label: "LT Alignment" },
+    { id: "board-review", label: "Board Review" },
+    { id: "roadmap-approved", label: "Roadmap Approved" },
+  ],
   build: [
     { id: "new", label: "NEW" },
     { id: "gathering-reqs", label: "Gathering Requirements" },
@@ -504,23 +509,39 @@ var Q2_SUBCOLS = {
     { id: "refinement", label: "Refinement" },
     { id: "development", label: "Development" },
     { id: "qa", label: "QA" },
+    { id: "ready-launch", label: "Ready for Launch" },
   ],
-  launch: [{ id: "tbd", label: "TBD" }],
-  measure: [{ id: "tbd", label: "TBD" }],
+  launch: [
+    { id: "new", label: "New" },
+    { id: "release-beta", label: "Release/Beta Planning" },
+    { id: "beta-testing", label: "Beta Testing" },
+    { id: "feedback", label: "Feedback & Launch Adjustments" },
+    { id: "ga-planning", label: "GA Roll-Out Planning" },
+    { id: "signoffs", label: "Final Sign-Offs" },
+    { id: "gtm-ready", label: "GTM Ready" },
+  ],
+  measure: [
+    { id: "new", label: "New" },
+    { id: "adoption", label: "Adoption & Feedback Monitoring" },
+    { id: "impact", label: "Business Impact Analysis" },
+    { id: "retro", label: "Retrospective & Learnings" },
+  ],
 };
 
-function Q2Board(props) {
+function DrillDownBoard(props) {
+  var quarter = props.quarter;
   var allPlp = safeItems(props.plpItems);
   var updatePlpItems = props.updatePlpItems;
-  var buildSubCol = props.buildSubCol || {};
-  var setBuildSubCol = props.setBuildSubCol;
+  var subColMap = props.subColMap || {};
+  var setSubColMap = props.setSubColMap;
 
-  // Filter to Q2 only
-  var q2Items = allPlp.filter(function(it) { return it.quarter === "Q2"; });
+  // Filter to this quarter only
+  var qItems = allPlp.filter(function(it) { return it.quarter === quarter; });
 
   var _drag = useState(null); var dragId = _drag[0]; var setDragId = _drag[1];
   var _dt = useState(null); var dropTarget = _dt[0]; var setDropTarget = _dt[1];
   var _db = useState(null); var dropBeforeId = _db[0]; var setDropBeforeId = _db[1];
+  var _collapsed = useState({}); var collapsed = _collapsed[0]; var setCollapsed = _collapsed[1];
 
   var fs = { month: 9.5, name: 12, exit: 10.5, close: 11, pad: "6px 8px", mb: 2 };
 
@@ -529,8 +550,15 @@ function Q2Board(props) {
   function parseCellKey(key) { var p = key.split(":"); return { phase: p[0], subCol: p[1] }; }
 
   function getSubCol(item) {
-    if (item.phase !== "build") return "tbd";
-    return buildSubCol[item.id] || "new";
+    return subColMap[item.id] || "new";
+  }
+
+  function toggleCollapse(phaseId) {
+    setCollapsed(function(prev) {
+      var next = Object.assign({}, prev);
+      next[phaseId] = !prev[phaseId];
+      return next;
+    });
   }
 
   function handleDragStart(e, id) { setDragId(id); e.dataTransfer.effectAllowed = "move"; }
@@ -560,19 +588,10 @@ function Q2Board(props) {
       }
       return without.concat([updated]);
     });
-    // Update buildSubCol mapping
-    if (target.phase === "build") {
-      var newBsc = Object.assign({}, buildSubCol);
-      newBsc[curDragId] = target.subCol;
-      setBuildSubCol(newBsc);
-    } else {
-      // Moving out of build — clean up mapping
-      if (buildSubCol[curDragId]) {
-        var cleaned = Object.assign({}, buildSubCol);
-        delete cleaned[curDragId];
-        setBuildSubCol(cleaned);
-      }
-    }
+    // Update subColMap mapping
+    var newScm = Object.assign({}, subColMap);
+    newScm[curDragId] = target.subCol;
+    setSubColMap(newScm);
     setDragId(null); setDropTarget(null); setDropBeforeId(null);
   }
   function handleDragEnd() { setDragId(null); setDropTarget(null); setDropBeforeId(null); }
@@ -621,84 +640,80 @@ function Q2Board(props) {
     );
   }
 
-  // Down-arrow chevron SVG
-  function DownArrow(props) {
-    var color = props.color || "#0d9488";
-    return (
-      <svg width="24" height="18" viewBox="0 0 24 18" fill="none" style={{ display: "block", margin: "0 auto" }}>
-        <path d="M2 2L12 14L22 2" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-
   return (
     <div style={{ padding: "10px 10px 20px" }}>
-      {q2Items.length === 0 && (
+      {qItems.length === 0 && (
         <div style={{ textAlign: "center", padding: "60px 20px", color: "#94a3b8", fontSize: 14 }}>
-          No Q2 items found. Assign cards a Q2 quarter on the PLP Board to see them here.
+          No {quarter} items found. Assign cards a {quarter} quarter on the PLP Board to see them here.
         </div>
       )}
-      {Q2_PHASE_ROWS.map(function(phaseRow) {
-        var phaseItems = q2Items.filter(function(it) { return it.phase === phaseRow.id; });
+      {DRILL_PHASE_ROWS.map(function(phaseRow) {
+        var phaseItems = qItems.filter(function(it) { return it.phase === phaseRow.id; });
         if (phaseItems.length === 0) return null;
-        var subCols = Q2_SUBCOLS[phaseRow.id] || [{ id: "tbd", label: "TBD" }];
+        var subCols = DRILL_SUBCOLS[phaseRow.id] || [{ id: "new", label: "New" }];
+        var isCollapsed = !!collapsed[phaseRow.id];
 
         return (
           <div key={phaseRow.id} style={{ marginBottom: 6 }}>
-            {/* Phase row header — down-arrow chevron */}
-            <div style={{
-              background: "linear-gradient(135deg, #0d9488, #14b8a6)",
-              color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 22, letterSpacing: "1px", textTransform: "uppercase",
-              textAlign: "center", borderRadius: "4px 4px 0 0", position: "relative",
-              clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px))",
-              paddingBottom: 18,
-            }}>
+            {/* Phase row header — flat rectangle with collapse toggle */}
+            <div
+              onClick={function() { toggleCollapse(phaseRow.id); }}
+              style={{
+                background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+                color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 22, letterSpacing: "1px", textTransform: "uppercase",
+                textAlign: "center", borderRadius: "4px 4px 0 0", position: "relative",
+                cursor: "pointer", userSelect: "none",
+              }}>
               {phaseRow.num + " | " + phaseRow.label}
+              <span style={{
+                position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)" + (isCollapsed ? " rotate(-90deg)" : ""),
+                transition: "transform 0.2s", fontSize: 18,
+              }}>{"▼"}</span>
             </div>
-            {/* Sub-column headers */}
-            <div style={{ display: "flex", gap: 0, padding: "0", background: "#f1f5f9", borderLeft: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
-              {subCols.map(function(col) {
-                return (
-                  <div key={col.id} style={{
-                    flex: 1, padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#475569",
-                    textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px",
-                    borderRight: "1px solid #e2e8f0",
-                  }}>
-                    {col.label}
-                  </div>
-                );
-              })}
-            </div>
-            {/* Sub-column drop zones */}
-            <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
-              {subCols.map(function(col) {
-                var cKey = cellKey(phaseRow.id, col.id);
-                var colItems = phaseItems.filter(function(it) {
-                  return getSubCol(it) === col.id;
-                });
-                var isOver = dropTarget === cKey && dragId;
-                return (
-                  <div key={cKey}
-                    onDragOver={function(e) { handleDragOverCell(e, cKey); }}
-                    onDragLeave={function() { setDropTarget(null); setDropBeforeId(null); }}
-                    onDrop={function(e) { handleDrop(e, cKey); }}
-                    style={{
-                      flex: 1, minHeight: 60,
-                      background: isOver ? "#f0fdfa" : "#fff",
-                      border: isOver ? "2px dashed #14b8a6" : "1px solid #e2e8f0",
-                      borderTop: "none", padding: 6,
-                      display: "flex", flexDirection: "column", gap: 6,
-                      transition: "background 0.15s, border 0.15s", minWidth: 0,
-                    }}>
-                    {colItems.map(function(it) { return renderCard(it, cKey); })}
-                  </div>
-                );
-              })}
-            </div>
-            {/* Down arrow connector between rows */}
-            <div style={{ textAlign: "center", padding: "4px 0 2px" }}>
-              <DownArrow />
-            </div>
+            {!isCollapsed && (
+              <div>
+                {/* Sub-column headers */}
+                <div style={{ display: "flex", gap: 0, padding: "0", background: "#f1f5f9", borderLeft: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
+                  {subCols.map(function(col) {
+                    return (
+                      <div key={col.id} style={{
+                        flex: 1, padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#475569",
+                        textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px",
+                        borderRight: "1px solid #e2e8f0",
+                      }}>
+                        {col.label}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Sub-column drop zones */}
+                <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+                  {subCols.map(function(col) {
+                    var cKey = cellKey(phaseRow.id, col.id);
+                    var colItems = phaseItems.filter(function(it) {
+                      return getSubCol(it) === col.id;
+                    });
+                    var isOver = dropTarget === cKey && dragId;
+                    return (
+                      <div key={cKey}
+                        onDragOver={function(e) { handleDragOverCell(e, cKey); }}
+                        onDragLeave={function() { setDropTarget(null); setDropBeforeId(null); }}
+                        onDrop={function(e) { handleDrop(e, cKey); }}
+                        style={{
+                          flex: 1, minHeight: 60,
+                          background: isOver ? "#f0fdfa" : "#fff",
+                          border: isOver ? "2px dashed #14b8a6" : "1px solid #e2e8f0",
+                          borderTop: "none", padding: 6,
+                          display: "flex", flexDirection: "column", gap: 6,
+                          transition: "background 0.15s, border 0.15s", minWidth: 0,
+                        }}>
+                        {colItems.map(function(it) { return renderCard(it, cKey); })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -718,36 +733,36 @@ function AppInner() {
   var _tab = useState("plp"); var activeTab = _tab[0]; var setActiveTab = _tab[1];
   var _plp = useState(saved && Array.isArray(saved.plpItems) ? safeItems(saved.plpItems) : INITIAL_PLP); var plpItems = _plp[0]; var setPlpItems = _plp[1];
   var _q2 = useState(saved && Array.isArray(saved.q2Items) ? safeItems(saved.q2Items) : []); var q2Items = _q2[0]; var setQ2Items = _q2[1];
-  var _bsc = useState(saved && saved.buildSubCol ? saved.buildSubCol : INITIAL_BSC); var buildSubCol = _bsc[0]; var setBuildSubCol = _bsc[1];
+  var _scm = useState(saved && saved.buildSubCol ? saved.buildSubCol : (saved && saved.subColMap ? saved.subColMap : INITIAL_SCM)); var subColMap = _scm[0]; var setSubColMap = _scm[1];
 
   // Persist to localStorage whenever data changes
   useEffect(function() {
     try {
       localStorage.setItem("engageBoardData", JSON.stringify({
-        plpItems: plpItems, q2Items: q2Items, buildSubCol: buildSubCol, nextId: gNextId,
+        plpItems: plpItems, q2Items: q2Items, buildSubCol: subColMap, subColMap: subColMap, nextId: gNextId,
         lastUpdated: new Date().toISOString()
       }));
     } catch(e) {}
-  }, [plpItems, q2Items, buildSubCol]);
+  }, [plpItems, q2Items, subColMap]);
 
   var historyRef = useRef([]);
   var MAX_HISTORY = 50;
-  function pushSnapshot(plp, q2, bsc) {
-    var snap = { plp: JSON.parse(JSON.stringify(plp)), q2: JSON.parse(JSON.stringify(q2)), bsc: JSON.parse(JSON.stringify(bsc || {})), ts: Date.now() };
+  function pushSnapshot(plp, q2, scm) {
+    var snap = { plp: JSON.parse(JSON.stringify(plp)), q2: JSON.parse(JSON.stringify(q2)), bsc: JSON.parse(JSON.stringify(scm || {})), ts: Date.now() };
     historyRef.current = historyRef.current.concat([snap]);
     if (historyRef.current.length > MAX_HISTORY) historyRef.current = historyRef.current.slice(historyRef.current.length - MAX_HISTORY);
   }
   var mountedRef = useRef(false);
-  if (!mountedRef.current) { pushSnapshot(saved && Array.isArray(saved.plpItems) ? safeItems(saved.plpItems) : INITIAL_PLP, saved && Array.isArray(saved.q2Items) ? safeItems(saved.q2Items) : [], saved && saved.buildSubCol ? saved.buildSubCol : {}); mountedRef.current = true; }
+  if (!mountedRef.current) { pushSnapshot(saved && Array.isArray(saved.plpItems) ? safeItems(saved.plpItems) : INITIAL_PLP, saved && Array.isArray(saved.q2Items) ? safeItems(saved.q2Items) : [], saved && saved.buildSubCol ? saved.buildSubCol : (saved && saved.subColMap ? saved.subColMap : {})); mountedRef.current = true; }
 
   function undo() {
     var h = historyRef.current; if (h.length < 2) return;
-    h.pop(); var prev = h[h.length - 1]; setPlpItems(prev.plp); setQ2Items(prev.q2); setBuildSubCol(prev.bsc || {});
+    h.pop(); var prev = h[h.length - 1]; setPlpItems(prev.plp); setQ2Items(prev.q2); setSubColMap(prev.bsc || {});
   }
   function recoverFromCrash() {
     var h = historyRef.current;
-    if (h.length > 0) { var last = h[h.length - 1]; setPlpItems(last.plp); setQ2Items(last.q2); setBuildSubCol(last.bsc || {}); }
-    else { setPlpItems(INITIAL_PLP); setQ2Items([]); setBuildSubCol(INITIAL_BSC); }
+    if (h.length > 0) { var last = h[h.length - 1]; setPlpItems(last.plp); setQ2Items(last.q2); setSubColMap(last.bsc || {}); }
+    else { setPlpItems(INITIAL_PLP); setQ2Items([]); setSubColMap(INITIAL_SCM); }
   }
 
   var _qf = useState(""); var quarterFilter = _qf[0]; var setQuarterFilter = _qf[1];
@@ -757,9 +772,9 @@ function AppInner() {
   var _showImport = useState(false); var showImport = _showImport[0]; var setShowImport = _showImport[1];
   var _importText = useState(""); var importText = _importText[0]; var setImportText = _importText[1];
 
-  var bscRef = useRef(buildSubCol);
-  useEffect(function() { bscRef.current = buildSubCol; }, [buildSubCol]);
-  function autoSave(plp, q2) { pushSnapshot(plp, q2, bscRef.current); setLastUpdated(new Date().toISOString()); }
+  var scmRef = useRef(subColMap);
+  useEffect(function() { scmRef.current = subColMap; }, [subColMap]);
+  function autoSave(plp, q2) { pushSnapshot(plp, q2, scmRef.current); setLastUpdated(new Date().toISOString()); }
   function wrapUpdater(setter, getOther, otherIsPlp) {
     return function(updater) {
       setter(function(prev) {
@@ -777,7 +792,7 @@ function AppInner() {
 
   function handleCopyBackup() {
     try {
-      var data = JSON.stringify({ plpItems: plpItems, q2Items: q2Items, buildSubCol: buildSubCol, nextId: gNextId, lastUpdated: lastUpdated }, null, 2);
+      var data = JSON.stringify({ plpItems: plpItems, q2Items: q2Items, subColMap: subColMap, buildSubCol: subColMap, nextId: gNextId, lastUpdated: lastUpdated }, null, 2);
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(data).then(function() { setFlash("Copied!"); setTimeout(function() { setFlash(""); }, 2000); }, function() { fallbackCopy(data); });
       } else { fallbackCopy(data); }
@@ -795,9 +810,10 @@ function AppInner() {
       var parsed = JSON.parse(importText);
       if (Array.isArray(parsed.plpItems)) setPlpItems(safeItems(parsed.plpItems));
       if (Array.isArray(parsed.q2Items)) setQ2Items(safeItems(parsed.q2Items));
-      if (parsed.buildSubCol && typeof parsed.buildSubCol === "object") setBuildSubCol(parsed.buildSubCol);
+      if (parsed.subColMap && typeof parsed.subColMap === "object") setSubColMap(parsed.subColMap);
+      else if (parsed.buildSubCol && typeof parsed.buildSubCol === "object") setSubColMap(parsed.buildSubCol);
       if (typeof parsed.nextId === "number") gNextId = parsed.nextId;
-      pushSnapshot(Array.isArray(parsed.plpItems) ? safeItems(parsed.plpItems) : plpItems, Array.isArray(parsed.q2Items) ? safeItems(parsed.q2Items) : q2Items, parsed.buildSubCol || buildSubCol);
+      pushSnapshot(Array.isArray(parsed.plpItems) ? safeItems(parsed.plpItems) : plpItems, Array.isArray(parsed.q2Items) ? safeItems(parsed.q2Items) : q2Items, parsed.subColMap || parsed.buildSubCol || subColMap);
       setLastUpdated(new Date().toISOString()); setShowImport(false); setImportText("");
       setFlash("Imported!"); setTimeout(function() { setFlash(""); }, 2000);
     } catch (e) { setFlash("Invalid JSON"); setTimeout(function() { setFlash(""); }, 3000); }
@@ -812,16 +828,23 @@ function AppInner() {
   var t = new Date(lastUpdated);
   var tsDate = (t.getMonth() + 1) + "/" + t.getDate();
   var tsTime = t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  var boardTitle = activeTab === "plp" ? "Projects by PLP Phase" : "Q2 Epics";
+  var boardTitles = { plp: "Projects by PLP Phase", q2: "Q2 Epics", q3: "Q3 Epics", q4: "Q4 Epics" };
+  var boardTitle = boardTitles[activeTab] || "Projects by PLP Phase";
   var tabBase = { padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", background: "transparent", border: "none", transition: "all 0.15s" };
+
+  function tabStyle(tabId) {
+    return Object.assign({}, tabBase, { color: activeTab === tabId ? "#fff" : "#64748b", borderBottom: activeTab === tabId ? "3px solid #14b8a6" : "3px solid transparent" });
+  }
 
   return (
     <ErrorBoundary onRecover={recoverFromCrash}>
       <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: "#f8fafc", minHeight: "100vh", padding: 0 }}>
         <div style={{ background: "#0f172a", padding: "0 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 0 }}>
-            <button style={Object.assign({}, tabBase, { color: activeTab === "plp" ? "#fff" : "#64748b", borderBottom: activeTab === "plp" ? "3px solid #14b8a6" : "3px solid transparent" })} onClick={function() { setActiveTab("plp"); }}>PLP Board</button>
-            <button style={Object.assign({}, tabBase, { color: activeTab === "q2" ? "#fff" : "#64748b", borderBottom: activeTab === "q2" ? "3px solid #14b8a6" : "3px solid transparent" })} onClick={function() { setActiveTab("q2"); }}>Q2 Board</button>
+            <button style={tabStyle("plp")} onClick={function() { setActiveTab("plp"); }}>PLP Board</button>
+            <button style={tabStyle("q2")} onClick={function() { setActiveTab("q2"); }}>Q2 Drill-Down</button>
+            <button style={tabStyle("q3")} onClick={function() { setActiveTab("q3"); }}>Q3 Drill-Down</button>
+            <button style={tabStyle("q4")} onClick={function() { setActiveTab("q4"); }}>Q4 Drill-Down</button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {flash && <span style={{ fontSize: 12, fontWeight: 600, color: flash === "Copied!" || flash === "Imported!" ? "#34d399" : "#f87171" }}>{flash}</span>}
@@ -879,7 +902,9 @@ function AppInner() {
           )}
         </div>
         {activeTab === "plp" && <PLPBoard items={plpItems} updateItems={plpUpdater} quarterFilter={quarterFilter} />}
-        {activeTab === "q2" && <Q2Board plpItems={plpItems} updatePlpItems={plpUpdater} buildSubCol={buildSubCol} setBuildSubCol={setBuildSubCol} />}
+        {activeTab === "q2" && <DrillDownBoard quarter="Q2" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
+        {activeTab === "q3" && <DrillDownBoard quarter="Q3" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
+        {activeTab === "q4" && <DrillDownBoard quarter="Q4" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
       </div>
     </ErrorBoundary>
   );
