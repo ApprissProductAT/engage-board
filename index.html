@@ -910,11 +910,67 @@ function AppInner() {
   );
 }
 
+var PASSPHRASE = "PineappleRoadmapAnchor";
+
+function PassphraseGate(props) {
+  var alreadyAuth = false;
+  try { alreadyAuth = sessionStorage.getItem("engageBoardAuth") === "true"; } catch(e) {}
+  var _auth = useState(alreadyAuth); var authed = _auth[0]; var setAuthed = _auth[1];
+  var _input = useState(""); var input = _input[0]; var setInput = _input[1];
+  var _error = useState(false); var error = _error[0]; var setError = _error[1];
+
+  function handleSubmit() {
+    if (input === PASSPHRASE) {
+      try { sessionStorage.setItem("engageBoardAuth", "true"); } catch(e) {}
+      setAuthed(true);
+      setError(false);
+    } else {
+      setError(true);
+    }
+  }
+
+  if (authed) return props.children;
+
+  return (
+    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#1e293b", borderRadius: 12, padding: "48px 56px", maxWidth: 400, textAlign: "center", border: "1px solid #334155" }}>
+        <div style={{ color: "#34d399", fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 6 }}>Engage</div>
+        <div style={{ color: "#f1f5f9", fontSize: 18, fontWeight: 600, marginBottom: 24 }}>Product Board</div>
+        <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 16 }}>Enter the access phrase to continue</div>
+        <input
+          type="password"
+          value={input}
+          onChange={function(e) { setInput(e.target.value); setError(false); }}
+          onKeyDown={function(e) { if (e.key === "Enter") handleSubmit(); }}
+          placeholder="Access phrase..."
+          autoFocus
+          style={{
+            width: "100%", padding: "12px 16px", fontSize: 14, background: "#0f172a", color: "#e2e8f0",
+            border: error ? "2px solid #ef4444" : "1px solid #475569", borderRadius: 6, boxSizing: "border-box",
+            marginBottom: 8, outline: "none",
+          }}
+        />
+        {error && <div style={{ color: "#ef4444", fontSize: 12, marginBottom: 8 }}>Incorrect phrase. Try again.</div>}
+        <button onClick={handleSubmit}
+          style={{
+            width: "100%", padding: "12px 0", fontSize: 14, fontWeight: 700,
+            background: "#14b8a6", color: "#fff", border: "none", borderRadius: 6,
+            cursor: "pointer", marginTop: 8,
+          }}>
+          Enter
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
-    <ErrorBoundary onRecover={function() {}}>
-      <AppInner />
-    </ErrorBoundary>
+    <PassphraseGate>
+      <ErrorBoundary onRecover={function() {}}>
+        <AppInner />
+      </ErrorBoundary>
+    </PassphraseGate>
   );
 }
 
