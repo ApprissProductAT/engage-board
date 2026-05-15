@@ -1,0 +1,890 @@
+import { useState, useEffect, useRef, Component } from "react";
+
+// ═══════════════════════════════════════════════════════════════════
+// SAFEGUARD 1: Error Boundary
+// ═══════════════════════════════════════════════════════════════════
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error: error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#1e293b", borderRadius: 12, padding: "40px 48px", maxWidth: 480, textAlign: "center", border: "1px solid #334155" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>{"⚠️"}</div>
+            <div style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Board crashed</div>
+            <div style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>Something went wrong. Your data is safe — click below to recover.</div>
+            <div style={{ color: "#64748b", fontSize: 11, marginBottom: 20, padding: "8px 12px", background: "#0f172a", borderRadius: 6, textAlign: "left", wordBreak: "break-word", maxHeight: 60, overflow: "auto" }}>
+              {this.state.error ? String(this.state.error) : "Unknown error"}
+            </div>
+            <button onClick={function() { if (this.props.onRecover) this.props.onRecover(); this.setState({ hasError: false, error: null }); }.bind(this)}
+              style={{ padding: "12px 32px", fontSize: 14, fontWeight: 700, background: "#14b8a6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+              Recover Board
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Constants
+// ═══════════════════════════════════════════════════════════════════
+var MONTH_COLORS = {
+  TBD: "#6B7280",
+  JANUARY: "#E53E3E", FEBRUARY: "#00B5AD", MARCH: "#D946EF",
+  APRIL: "#E53E3E", MAY: "#3B82F6", JUNE: "#F59E0B",
+  JULY: "#10B981", AUGUST: "#8B5CF6", SEPTEMBER: "#EC4899",
+  OCTOBER: "#F97316", NOVEMBER: "#06B6D4", DECEMBER: "#6366F1",
+};
+var MONTHS = ["TBD","JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+
+var MONTH_TO_QUARTER = { JANUARY:"Q1",FEBRUARY:"Q1",MARCH:"Q1",APRIL:"Q2",MAY:"Q2",JUNE:"Q2",JULY:"Q3",AUGUST:"Q3",SEPTEMBER:"Q3",OCTOBER:"Q4",NOVEMBER:"Q4",DECEMBER:"Q4" };
+
+var PLP_PHASES = [
+  { id: "what", num: 1, label: "What", title: "Signal Intake & Continuous Insight", desc: "Continuously surface customer, market, and competitive signals to maintain a shared view of priorities." },
+  { id: "why", num: 2, label: "Why", title: "Signal Validation & De-Risking", desc: "Validate & score initiatives on business impact, demand, feasibility, and risk before committing resources." },
+  { id: "when", num: 3, label: "When", title: "Roadmapping & Board Review", desc: "Sequence & capacity-plan approved initiatives into a quarterly roadmap presented to the board." },
+  { id: "build", num: 4, label: "Build", title: "Sprint Planning & Development", desc: "Define scope, assign teams, and execute through design, development, and QA." },
+  { id: "launch", num: 5, label: "Launch", title: "Signoffs & Go-To-Market", desc: "Complete quality & compliance signoffs, then coordinate go-to-market across Sales, CS, and Marketing." },
+  { id: "measure", num: 6, label: "Measure", title: "Adoption & Measuring Success", desc: "Track adoption, retention, and revenue impact. Feed results back into the next cycle." },
+];
+
+// PLP rows (On Track / Behind / On Hold)
+var PLP_ROWS = [
+  { id: "on-track", label: "On Track", color: "#22C55E", bg: "#f0fdf4" },
+  { id: "behind", label: "Behind", color: "#F59E0B", bg: "#fffbeb" },
+  { id: "on-hold", label: "On Hold", color: "#94A3B8", bg: "#f8fafc" },
+];
+
+// Quarter pills (replaces Status)
+var QUARTERS = [
+  { value: "", label: "None", bg: "transparent", text: "#94a3b8", border: "transparent" },
+  { value: "Q1", label: "Q1", bg: "#dbeafe", text: "#1e40af", border: "#bfdbfe" },
+  { value: "Q2", label: "Q2", bg: "#d1fae5", text: "#065f46", border: "#a7f3d0" },
+  { value: "Q3", label: "Q3", bg: "#fef3c7", text: "#92400e", border: "#fde68a" },
+  { value: "Q4", label: "Q4", bg: "#ede9fe", text: "#5b21b6", border: "#ddd6fe" },
+];
+
+// Drill-down lanes
+var Q2_LANES = [
+  { id: "on-hold", label: "On Hold" },
+  { id: "at-risk", label: "At Risk" },
+  { id: "on-track", label: "On Track" },
+];
+
+var INITIAL_PLP = [
+  { id: "p2", month: "TBD", name: "Decision Studio 2.0: Status Totals", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p3", month: "TBD", name: "Engage Insights 2.0", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p4", month: "TBD", name: "Platform Friction: Navigation & Taxonomy", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p5", month: "TBD", name: "Platform Friction: Loading Times", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p11", month: "JULY", name: "Engage Insights: Claims Metrics", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-372" },
+  { id: "p9", month: "JULY", name: "Decision Studio: Custom Messaging", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p10", month: "JULY", name: "Decision Studio: Call Center Scripts", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p13", month: "JULY", name: "Decision Studio: Custom Rules", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p14", month: "JULY", name: "Remaining Portal Items: TBD", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p15", month: "AUGUST", name: "Engage Portal Decomm", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "102", month: "JULY", name: "Claims Automation (Gap Inc.)", phase: "why", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p16", month: "MAY", name: "Consumer Alerts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
+  { id: "p18", month: "JUNE", name: "Engage Insights 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Finalize scope & GTM plan; finish Linking 2.0", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "p17", month: "MAY", name: "Consumer Watching", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
+  { id: "p12", month: "JUNE", name: "Linking 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-706" },
+  { id: "p19", month: "JUNE", name: "Engage Metrics 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "" },
+  { id: "p20", month: "JUNE", name: "Consumer Search", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "" },
+  { id: "101", month: "JUNE", name: "Streamline Engage Implementations", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-473" },
+  { id: "100", month: "JUNE", name: "Engage Preview for Secure", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-371" },
+  { id: "p6", month: "JUNE", name: "Decision Studio: SKU Based Policies", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p7", month: "JUNE", name: "Decision Studio: Flagged Consumers", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p8", month: "JUNE", name: "Decision Studio: Flagged Receipts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
+  { id: "p1", month: "TBD", name: "Decision Studio 2.0: Landing Page/ Dashboard", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "p21", month: "JUNE", name: "Disputes Management 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
+];
+
+var INITIAL_SCM = {"100":"design","101":"gathering-reqs","p16":"writing-reqs","p17":"gathering-reqs","p21":"writing-reqs","p12":"development","p18":"gathering-reqs","p19":"gathering-reqs","p20":"gathering-reqs","p11":"gathering-reqs","p6":"design","p7":"design","p8":"design"};
+
+var gNextId = 103;
+
+// ═══════════════════════════════════════════════════════════════════
+// SAFEGUARD 4: Defensive rendering
+// ═══════════════════════════════════════════════════════════════════
+function safeItem(it) {
+  if (!it || typeof it !== "object") return null;
+  return {
+    id: it.id || "unknown_" + Math.random().toString(36).slice(2),
+    month: MONTHS.indexOf(it.month) >= 0 ? it.month : "TBD",
+    name: typeof it.name === "string" ? it.name : "(untitled)",
+    phase: typeof it.phase === "string" ? it.phase : "what",
+    quarter: typeof it.quarter === "string" ? it.quarter : "",
+    row: typeof it.row === "string" ? it.row : "on-track",
+    exitCriteria: typeof it.exitCriteria === "string" ? it.exitCriteria : "",
+    jiraLink: typeof it.jiraLink === "string" ? it.jiraLink : "",
+  };
+}
+function safeItems(arr) {
+  if (!Array.isArray(arr)) return [];
+  var result = [];
+  for (var i = 0; i < arr.length; i++) { var s = safeItem(arr[i]); if (s) result.push(s); }
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Quarter pill component
+// ═══════════════════════════════════════════════════════════════════
+function QuarterPill(props) {
+  var q = props.quarter;
+  if (!q) return null;
+  var qObj = QUARTERS.find(function(x) { return x.value === q; });
+  if (!qObj || !qObj.value) return null;
+  return (
+    <span style={{
+      display: "inline-block", padding: "1px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700, letterSpacing: "0.3px",
+      background: qObj.bg, color: qObj.text, border: "1px solid " + qObj.border, lineHeight: "16px",
+    }}>{qObj.label}</span>
+  );
+}
+// ═══════════════════════════════════════════════════════════════════
+// PLP Board — flat columns with quarter field
+// ═══════════════════════════════════════════════════════════════════
+function PLPBoard(props) {
+  var allItems = safeItems(props.items);
+  var updateItems = props.updateItems;
+  var qFilter = props.quarterFilter || "";
+  var items = qFilter ? allItems.filter(function(it) { return it.quarter === qFilter; }) : allItems;
+  var lanes = PLP_PHASES;
+
+  var _drag = useState(null); var dragId = _drag[0]; var setDragId = _drag[1];
+  var _dt = useState(null); var dropTarget = _dt[0]; var setDropTarget = _dt[1];
+  var _db = useState(null); var dropBeforeId = _db[0]; var setDropBeforeId = _db[1];
+  var _at = useState(null); var addingTo = _at[0]; var setAddingTo = _at[1];
+  var _fm = useState("TBD"); var formMonth = _fm[0]; var setFormMonth = _fm[1];
+  var _fn = useState(""); var formName = _fn[0]; var setFormName = _fn[1];
+  var _fq = useState(""); var formQuarter = _fq[0]; var setFormQuarter = _fq[1];
+  var _fj = useState(""); var formJira = _fj[0]; var setFormJira = _fj[1];
+  var _sl = useState(true); var showLegend = _sl[0]; var setShowLegend = _sl[1];
+  var _ei = useState(null); var editId = _ei[0]; var setEditId = _ei[1];
+  var _em = useState(""); var editMonth = _em[0]; var setEditMonth = _em[1];
+  var _en = useState(""); var editName = _en[0]; var setEditName = _en[1];
+  var _eq = useState(""); var editQuarter = _eq[0]; var setEditQuarter = _eq[1];
+  var _ej = useState(""); var editJira = _ej[0]; var setEditJira = _ej[1];
+
+  var fs = { month: 9.5, name: 12, exit: 10.5, close: 11, pad: "6px 8px", mb: 2 };
+
+  function startEdit(item) {
+    setEditId(item.id); setEditMonth(item.month); setEditName(item.name);
+    setEditQuarter(item.quarter || ""); setEditJira(item.jiraLink || "");
+  }
+  function saveEdit() {
+    if (!editName.trim()) return;
+    var upd = { month: editMonth, name: editName.trim(), quarter: editQuarter, jiraLink: editJira.trim() };
+    updateItems(function(prev) {
+      return prev.map(function(it) { return it.id === editId ? Object.assign({}, it, upd) : it; });
+    });
+    setEditId(null);
+  }
+  function cancelEdit() { setEditId(null); }
+
+  function handleDragStart(e, id) { setDragId(id); e.dataTransfer.effectAllowed = "move"; }
+  function handleDragOverLane(e, laneId) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropTarget(laneId); }
+  function handleDragOverItem(e, laneId, itemId) {
+    e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; setDropTarget(laneId);
+    var rect = e.currentTarget.getBoundingClientRect();
+    setDropBeforeId(e.clientY < rect.top + rect.height / 2 ? itemId : itemId + "_after");
+  }
+  function handleDrop(e, laneId) {
+    e.preventDefault();
+    if (!dragId) return;
+    var curDragId = dragId; var curDropBefore = dropBeforeId;
+    updateItems(function(prev) {
+      var dragItem = prev.find(function(it) { return it.id === curDragId; }); if (!dragItem) return prev;
+      var without = prev.filter(function(it) { return it.id !== curDragId; });
+      var updated = Object.assign({}, dragItem, { phase: laneId });
+      if (curDropBefore) {
+        var targetId = curDropBefore.endsWith("_after") ? curDropBefore.replace("_after", "") : curDropBefore;
+        var targetIdx = without.findIndex(function(it) { return it.id === targetId; });
+        if (targetIdx !== -1) {
+          var insertIdx = curDropBefore.endsWith("_after") ? targetIdx + 1 : targetIdx;
+          without.splice(insertIdx, 0, updated);
+          return without;
+        }
+      }
+      return without.concat([updated]);
+    });
+    setDragId(null); setDropTarget(null); setDropBeforeId(null);
+  }
+  function handleDragEnd() { setDragId(null); setDropTarget(null); setDropBeforeId(null); }
+
+  function addItem() {
+    if (!formName.trim()) return;
+    var newItem = { id: String(gNextId++), month: formMonth, name: formName.trim(), phase: addingTo, quarter: formQuarter, row: "on-track", exitCriteria: "", jiraLink: formJira.trim() };
+    updateItems(function(prev) { return prev.concat([newItem]); });
+    setFormName(""); setFormQuarter(""); setFormJira(""); setAddingTo(null);
+  }
+  function removeItem(id) {
+    updateItems(function(prev) { return prev.filter(function(it) { return it.id !== id; }); });
+  }
+
+  function renderEditForm(it) {
+    return (
+      <div key={it.id} style={{ border: "1.5px solid #14b8a6", borderRadius: 5, padding: 8, background: "#f0fdfa" }}>
+        <select value={editMonth} onChange={function(e) { var m = e.target.value; setEditMonth(m); if (MONTH_TO_QUARTER[m]) setEditQuarter(MONTH_TO_QUARTER[m]); }}
+          style={{ width: "100%", marginBottom: 4, padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
+          {MONTHS.map(function(m) { return <option key={m} value={m}>{m}</option>; })}
+        </select>
+        <input autoFocus value={editName} onChange={function(e) { setEditName(e.target.value); }}
+          placeholder="Work item name..."
+          onKeyDown={function(e) { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box" }} />
+        <select value={editQuarter} onChange={function(e) { setEditQuarter(e.target.value); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", marginBottom: 4 }}>
+          {QUARTERS.map(function(q) { return <option key={q.value} value={q.value}>{q.value || "No quarter"}</option>; })}
+        </select>
+        <input value={editJira} onChange={function(e) { setEditJira(e.target.value); }}
+          placeholder="Jira link..."
+          onKeyDown={function(e) { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box", color: "#475569" }} />
+        <div style={{ display: "flex", gap: 4 }}>
+          <button onClick={saveEdit} style={{ flex: 1, padding: "4px 0", fontSize: 10, fontWeight: 600, background: "#0d9488", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Save</button>
+          <button onClick={cancelEdit} style={{ flex: 1, padding: "4px 0", fontSize: 10, background: "#e2e8f0", border: "none", borderRadius: 4, cursor: "pointer", color: "#475569" }}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderCard(it) {
+    if (!it || !it.id) return null;
+    return (
+      <div key={it.id} style={{ position: "relative" }}>
+        {dragId && dropBeforeId === it.id && dragId !== it.id && (
+          <div style={{ height: 3, background: "#14b8a6", borderRadius: 2, marginBottom: 3 }} />
+        )}
+        <div draggable
+          onDragStart={function(e) { handleDragStart(e, it.id); }}
+          onDragEnd={handleDragEnd}
+          onDragOver={function(e) { handleDragOverItem(e, it.phase, it.id); }}
+          onClick={function() { startEdit(it); }}
+          style={{
+            border: "1.5px solid #cbd5e1", borderRadius: 5, padding: fs.pad,
+            background: dragId === it.id ? "#f1f5f9" : "#fff",
+            cursor: "grab", opacity: dragId === it.id ? 0.5 : 1,
+            position: "relative", transition: "box-shadow 0.15s",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+          }}>
+          <button onClick={function(e) { e.stopPropagation(); removeItem(it.id); }}
+            style={{ position: "absolute", top: 2, right: 4, background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: fs.close, lineHeight: 1, padding: 2 }}
+            title="Remove">{"×"}</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fs.mb }}>
+            <div style={{ fontSize: fs.month, fontWeight: 700, letterSpacing: "0.5px", color: MONTH_COLORS[it.month] || "#64748b", textTransform: "uppercase" }}>
+              {it.month || "TBD"}
+            </div>
+            {it.quarter && (
+              <div style={{ marginRight: 12 }}><QuarterPill quarter={it.quarter} /></div>
+            )}
+          </div>
+          <div style={{ fontSize: fs.name, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, paddingRight: 10 }}>{it.name || "(untitled)"}</div>
+          {it.jiraLink && (
+            <div style={{ marginTop: 2, paddingRight: 10 }}>
+              <a href={it.jiraLink} target="_blank" rel="noopener noreferrer"
+                onClick={function(e) { e.stopPropagation(); }}
+                style={{ fontSize: 10.5, color: "#3B82F6", fontWeight: 500, textDecoration: "none" }}>
+                {it.jiraLink.split("/").filter(Boolean).pop()}
+              </a>
+            </div>
+          )}
+        </div>
+        {dragId && dropBeforeId === it.id + "_after" && dragId !== it.id && (
+          <div style={{ height: 3, background: "#14b8a6", borderRadius: 2, marginTop: 3 }} />
+        )}
+      </div>
+    );
+  }
+
+  function renderAddForm() {
+    return (
+      <div style={{ border: "1.5px dashed #94a3b8", borderRadius: 5, padding: 8, background: "#f8fafc" }}>
+        <select value={formMonth} onChange={function(e) { var m = e.target.value; setFormMonth(m); if (MONTH_TO_QUARTER[m]) setFormQuarter(MONTH_TO_QUARTER[m]); }}
+          style={{ width: "100%", marginBottom: 4, padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
+          {MONTHS.map(function(m) { return <option key={m} value={m}>{m}</option>; })}
+        </select>
+        <input autoFocus placeholder="Work item name..." value={formName} onChange={function(e) { setFormName(e.target.value); }}
+          onKeyDown={function(e) { if (e.key === "Enter") addItem(); if (e.key === "Escape") setAddingTo(null); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box" }} />
+        <select value={formQuarter} onChange={function(e) { setFormQuarter(e.target.value); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", marginBottom: 4 }}>
+          {QUARTERS.map(function(q) { return <option key={q.value} value={q.value}>{q.value || "No quarter"}</option>; })}
+        </select>
+        <input value={formJira} onChange={function(e) { setFormJira(e.target.value); }}
+          placeholder="Jira link..."
+          onKeyDown={function(e) { if (e.key === "Enter") addItem(); if (e.key === "Escape") setAddingTo(null); }}
+          style={{ width: "100%", padding: "4px 5px", fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 4, marginBottom: 4, boxSizing: "border-box", color: "#475569" }} />
+        <div style={{ display: "flex", gap: 4 }}>
+          <button onClick={addItem}
+            style={{ flex: 1, padding: "4px 0", fontSize: 10, fontWeight: 600, background: "#0d9488", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Add</button>
+          <button onClick={function() { setAddingTo(null); setFormName(""); setFormQuarter(""); setFormJira(""); }}
+            style={{ flex: 1, padding: "4px 0", fontSize: 10, background: "#e2e8f0", border: "none", borderRadius: 4, cursor: "pointer", color: "#475569" }}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Chevron header */}
+      <div style={{ display: "flex", overflow: "hidden", background: "#f8fafc", padding: "16px 10px 0" }}>
+        {lanes.map(function(lane, i) {
+          return (
+            <div key={lane.id} style={{ flex: 1, display: "flex", alignItems: "center", position: "relative", minWidth: 0 }}>
+              <div style={{
+                background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+                color: "#fff", padding: "10px 18px 10px 28px", fontWeight: 700, fontSize: 15,
+                flex: 1, textAlign: "center",
+                clipPath: i === lanes.length - 1
+                  ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 8px 50%)"
+                  : "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 8px 50%)",
+                marginLeft: i === 0 ? 0 : -4,
+              }}>
+                {lane.num + " | " + lane.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Description row */}
+      <div style={{ display: "flex", padding: "0 10px", gap: 4, marginTop: 4 }}>
+        {lanes.map(function(lane) {
+          return (
+            <div key={lane.id} style={{ flex: 1, padding: "10px 10px", background: "#fff", borderRadius: 4, border: "1px solid #e2e8f0", minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#0f766e", marginBottom: 4, lineHeight: 1.3 }}>{lane.title}</div>
+              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.45 }}>{lane.desc}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Swim lanes */}
+      <div style={{ display: "flex", padding: "4px 10px 10px", gap: 4, alignItems: "stretch" }}>
+        {lanes.map(function(lane) {
+          var laneItems = items.filter(function(it) { return it.phase === lane.id; });
+          var isOver = dropTarget === lane.id && dragId;
+          return (
+            <div key={lane.id}
+              onDragOver={function(e) { handleDragOverLane(e, lane.id); }}
+              onDragLeave={function() { setDropTarget(null); setDropBeforeId(null); }}
+              onDrop={function(e) { handleDrop(e, lane.id); }}
+              style={{
+                flex: 1, minHeight: 160,
+                background: isOver ? "#f0fdfa" : "#fff",
+                border: isOver ? "2px dashed #14b8a6" : "1px solid #e2e8f0",
+                borderRadius: 4, padding: 8,
+                display: "flex", flexDirection: "column", gap: 8,
+                transition: "background 0.15s, border 0.15s", minWidth: 0,
+              }}>
+              {laneItems.map(function(it) {
+                return editId === it.id ? renderEditForm(it) : renderCard(it);
+              })}
+              {addingTo === lane.id ? renderAddForm() : (
+                <button
+                  onClick={function() { setAddingTo(lane.id); setFormMonth("TBD"); setFormName(""); setFormQuarter(""); setFormJira(""); }}
+                  style={{
+                    border: "1.5px dashed #cbd5e1", borderRadius: 5, padding: "10px 0",
+                    background: "transparent", color: "#94a3b8", cursor: "pointer",
+                    fontSize: 18, lineHeight: 1, transition: "border-color 0.15s, color 0.15s", marginTop: "auto",
+                  }}
+                  title="Add item">+</button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      {showLegend && (
+        <div style={{ margin: "4px 10px 16px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, display: "inline-flex", alignItems: "flex-start", gap: 16, fontSize: 12, color: "#475569", position: "relative" }}>
+          <button onClick={function() { setShowLegend(false); }} style={{ position: "absolute", top: 4, right: 8, background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 13 }}>{"×"}</button>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", marginBottom: 6 }}>Tile Legend</div>
+            <div style={{ border: "1.5px solid #cbd5e1", borderRadius: 5, padding: "8px 14px", width: 170 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", color: "#E53E3E" }}>DELIVERY MONTH</div>
+                <QuarterPill quarter="Q2" />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Committed Body of Work</div>
+              <div style={{ fontSize: 10, color: "#3B82F6", fontWeight: 500, marginTop: 2 }}>Link to Jira</div>
+            </div>
+          </div>
+          <div style={{ borderLeft: "1px solid #e2e8f0", paddingLeft: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", marginBottom: 6 }}>Month Colors</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 12px" }}>
+              {MONTHS.map(function(m) {
+                return (
+                  <div key={m} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: MONTH_COLORS[m] }} />
+                    <span style={{ fontSize: 10.5 }}>{m === "TBD" ? "TBD" : m.charAt(0) + m.slice(1).toLowerCase()}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", marginBottom: 6, marginTop: 10 }}>Quarter</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {QUARTERS.filter(function(q) { return q.value; }).map(function(q) {
+                return (
+                  <div key={q.value} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <QuarterPill quarter={q.value} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      {!showLegend && (
+        <button onClick={function() { setShowLegend(true); }}
+          style={{ margin: "4px 10px 16px", padding: "6px 14px", fontSize: 11, color: "#64748b", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 4, cursor: "pointer" }}>
+          Show Legend
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Drill-Down Board — generic component for Q2/Q3/Q4 drill-downs
+// Phase rows with collapsible sub-columns
+// ═══════════════════════════════════════════════════════════════════
+var DRILL_PHASE_ROWS = [
+  { id: "what", num: 1, label: "What" },
+  { id: "why", num: 2, label: "Why" },
+  { id: "when", num: 3, label: "When" },
+  { id: "build", num: 4, label: "Build" },
+  { id: "launch", num: 5, label: "Launch" },
+  { id: "measure", num: 6, label: "Measure" },
+];
+
+var DRILL_SUBCOLS = {
+  what: [
+    { id: "new", label: "New" },
+    { id: "triage", label: "Triage" },
+    { id: "evidence", label: "Evidence Gathering" },
+    { id: "ready-validation", label: "Ready for Validation" },
+  ],
+  why: [
+    { id: "new", label: "New" },
+    { id: "prd-writing", label: "PRD Writing" },
+    { id: "rice", label: "RICE Evaluation" },
+    { id: "feasibility", label: "Feasibility & Risk Review" },
+    { id: "approved", label: "Approved for Roadmap Consideration" },
+  ],
+  when: [
+    { id: "new", label: "New" },
+    { id: "dependency", label: "Dependency & Capacity Review" },
+    { id: "sequencing", label: "Quarterly Sequencing" },
+    { id: "lt-alignment", label: "LT Alignment" },
+    { id: "board-review", label: "Board Review" },
+    { id: "roadmap-approved", label: "Roadmap Approved" },
+  ],
+  build: [
+    { id: "new", label: "NEW" },
+    { id: "gathering-reqs", label: "Gathering Requirements" },
+    { id: "design", label: "Design & Prototyping" },
+    { id: "writing-reqs", label: "Writing Requirements" },
+    { id: "refinement", label: "Refinement" },
+    { id: "development", label: "Development" },
+    { id: "qa", label: "QA" },
+    { id: "ready-launch", label: "Ready for Launch" },
+  ],
+  launch: [
+    { id: "new", label: "New" },
+    { id: "release-beta", label: "Release/Beta Planning" },
+    { id: "beta-testing", label: "Beta Testing" },
+    { id: "feedback", label: "Feedback & Launch Adjustments" },
+    { id: "ga-planning", label: "GA Roll-Out Planning" },
+    { id: "signoffs", label: "Final Sign-Offs" },
+    { id: "gtm-ready", label: "GTM Ready" },
+  ],
+  measure: [
+    { id: "new", label: "New" },
+    { id: "adoption", label: "Adoption & Feedback Monitoring" },
+    { id: "impact", label: "Business Impact Analysis" },
+    { id: "retro", label: "Retrospective & Learnings" },
+  ],
+};
+
+function DrillDownBoard(props) {
+  var quarter = props.quarter;
+  var allPlp = safeItems(props.plpItems);
+  var updatePlpItems = props.updatePlpItems;
+  var subColMap = props.subColMap || {};
+  var setSubColMap = props.setSubColMap;
+
+  // Filter to this quarter only
+  var qItems = allPlp.filter(function(it) { return it.quarter === quarter; });
+
+  var _drag = useState(null); var dragId = _drag[0]; var setDragId = _drag[1];
+  var _dt = useState(null); var dropTarget = _dt[0]; var setDropTarget = _dt[1];
+  var _db = useState(null); var dropBeforeId = _db[0]; var setDropBeforeId = _db[1];
+  var _collapsed = useState({}); var collapsed = _collapsed[0]; var setCollapsed = _collapsed[1];
+
+  var fs = { month: 9.5, name: 12, exit: 10.5, close: 11, pad: "6px 8px", mb: 2 };
+
+  // dropTarget = "phase:subColId"
+  function cellKey(phase, subCol) { return phase + ":" + subCol; }
+  function parseCellKey(key) { var p = key.split(":"); return { phase: p[0], subCol: p[1] }; }
+
+  function getSubCol(item) {
+    var mapped = subColMap[item.id] || "new";
+    var validCols = DRILL_SUBCOLS[item.phase];
+    if (validCols && !validCols.some(function(c) { return c.id === mapped; })) return "new";
+    return mapped;
+  }
+
+  function toggleCollapse(phaseId) {
+    setCollapsed(function(prev) {
+      var next = Object.assign({}, prev);
+      next[phaseId] = !prev[phaseId];
+      return next;
+    });
+  }
+
+  function handleDragStart(e, id) { setDragId(id); e.dataTransfer.effectAllowed = "move"; }
+  function handleDragOverCell(e, cKey) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropTarget(cKey); }
+  function handleDragOverItem(e, cKey, itemId) {
+    e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; setDropTarget(cKey);
+    var rect = e.currentTarget.getBoundingClientRect();
+    setDropBeforeId(e.clientY < rect.top + rect.height / 2 ? itemId : itemId + "_after");
+  }
+  function handleDrop(e, cKey) {
+    e.preventDefault();
+    if (!dragId) return;
+    var curDragId = dragId; var curDropBefore = dropBeforeId;
+    var target = parseCellKey(cKey);
+    // Update phase on PLP data (two-way sync)
+    updatePlpItems(function(prev) {
+      var dragItem = prev.find(function(it) { return it.id === curDragId; }); if (!dragItem) return prev;
+      var without = prev.filter(function(it) { return it.id !== curDragId; });
+      var updated = Object.assign({}, dragItem, { phase: target.phase });
+      if (curDropBefore) {
+        var targetId = curDropBefore.endsWith("_after") ? curDropBefore.replace("_after", "") : curDropBefore;
+        var targetIdx = without.findIndex(function(it) { return it.id === targetId; });
+        if (targetIdx !== -1) {
+          without.splice(curDropBefore.endsWith("_after") ? targetIdx + 1 : targetIdx, 0, updated);
+          return without;
+        }
+      }
+      return without.concat([updated]);
+    });
+    // Update subColMap mapping
+    var newScm = Object.assign({}, subColMap);
+    newScm[curDragId] = target.subCol;
+    setSubColMap(newScm);
+    setDragId(null); setDropTarget(null); setDropBeforeId(null);
+  }
+  function handleDragEnd() { setDragId(null); setDropTarget(null); setDropBeforeId(null); }
+
+  function renderCard(it, cKey) {
+    if (!it || !it.id) return null;
+    return (
+      <div key={it.id} style={{ position: "relative" }}>
+        {dragId && dropBeforeId === it.id && dragId !== it.id && (
+          <div style={{ height: 3, background: "#14b8a6", borderRadius: 2, marginBottom: 3 }} />
+        )}
+        <div draggable
+          onDragStart={function(e) { handleDragStart(e, it.id); }}
+          onDragEnd={handleDragEnd}
+          onDragOver={function(e) { handleDragOverItem(e, cKey, it.id); }}
+          style={{
+            border: "1.5px solid #cbd5e1", borderRadius: 5, padding: fs.pad,
+            background: dragId === it.id ? "#f1f5f9" : "#fff",
+            cursor: "grab", opacity: dragId === it.id ? 0.5 : 1,
+            position: "relative", transition: "box-shadow 0.15s",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+          }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fs.mb }}>
+            <div style={{ fontSize: fs.month, fontWeight: 700, letterSpacing: "0.5px", color: MONTH_COLORS[it.month] || "#64748b", textTransform: "uppercase" }}>
+              {it.month || "TBD"}
+            </div>
+            {it.quarter && (
+              <div><QuarterPill quarter={it.quarter} /></div>
+            )}
+          </div>
+          <div style={{ fontSize: fs.name, fontWeight: 600, color: "#1e293b", lineHeight: 1.3, paddingRight: 10 }}>{it.name || "(untitled)"}</div>
+          {it.jiraLink && (
+            <div style={{ marginTop: 2, paddingRight: 10 }}>
+              <a href={it.jiraLink} target="_blank" rel="noopener noreferrer"
+                onClick={function(e) { e.stopPropagation(); }}
+                style={{ fontSize: 10.5, color: "#3B82F6", fontWeight: 500, textDecoration: "none" }}>
+                {it.jiraLink.split("/").filter(Boolean).pop()}
+              </a>
+            </div>
+          )}
+        </div>
+        {dragId && dropBeforeId === it.id + "_after" && dragId !== it.id && (
+          <div style={{ height: 3, background: "#14b8a6", borderRadius: 2, marginTop: 3 }} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "10px 10px 20px" }}>
+      {qItems.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "#94a3b8", fontSize: 14 }}>
+          No {quarter} items found. Assign cards a {quarter} quarter on the PLP Board to see them here.
+        </div>
+      )}
+      {DRILL_PHASE_ROWS.map(function(phaseRow) {
+        var phaseItems = qItems.filter(function(it) { return it.phase === phaseRow.id; });
+        if (phaseItems.length === 0) return null;
+        var subCols = DRILL_SUBCOLS[phaseRow.id] || [{ id: "new", label: "New" }];
+        var isCollapsed = !!collapsed[phaseRow.id];
+
+        return (
+          <div key={phaseRow.id} style={{ marginBottom: 6 }}>
+            {/* Phase row header — flat rectangle with collapse toggle */}
+            <div
+              onClick={function() { toggleCollapse(phaseRow.id); }}
+              style={{
+                background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+                color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 22, letterSpacing: "1px", textTransform: "uppercase",
+                textAlign: "center", borderRadius: "4px 4px 0 0", position: "relative",
+                cursor: "pointer", userSelect: "none",
+              }}>
+              {phaseRow.num + " | " + phaseRow.label}
+              <span style={{
+                position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)" + (isCollapsed ? " rotate(-90deg)" : ""),
+                transition: "transform 0.2s", fontSize: 18,
+              }}>{"▼"}</span>
+            </div>
+            {!isCollapsed && (
+              <div>
+                {/* Sub-column headers */}
+                <div style={{ display: "flex", gap: 0, padding: "0", background: "#f1f5f9", borderLeft: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
+                  {subCols.map(function(col) {
+                    return (
+                      <div key={col.id} style={{
+                        flex: 1, padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#475569",
+                        textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px",
+                        borderRight: "1px solid #e2e8f0",
+                      }}>
+                        {col.label}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Sub-column drop zones */}
+                <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+                  {subCols.map(function(col) {
+                    var cKey = cellKey(phaseRow.id, col.id);
+                    var colItems = phaseItems.filter(function(it) {
+                      return getSubCol(it) === col.id;
+                    });
+                    var isOver = dropTarget === cKey && dragId;
+                    return (
+                      <div key={cKey}
+                        onDragOver={function(e) { handleDragOverCell(e, cKey); }}
+                        onDragLeave={function() { setDropTarget(null); setDropBeforeId(null); }}
+                        onDrop={function(e) { handleDrop(e, cKey); }}
+                        style={{
+                          flex: 1, minHeight: 60,
+                          background: isOver ? "#f0fdfa" : "#fff",
+                          border: isOver ? "2px dashed #14b8a6" : "1px solid #e2e8f0",
+                          borderTop: "none", padding: 6,
+                          display: "flex", flexDirection: "column", gap: 6,
+                          transition: "background 0.15s, border 0.15s", minWidth: 0,
+                        }}>
+                        {colItems.map(function(it) { return renderCard(it, cKey); })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Main App (safeguards preserved from v2)
+// ═══════════════════════════════════════════════════════════════════
+function AppInner() {
+  var _tab = useState("plp"); var activeTab = _tab[0]; var setActiveTab = _tab[1];
+  var _plp = useState(INITIAL_PLP); var plpItems = _plp[0]; var setPlpItems = _plp[1];
+  var _q2 = useState([]); var q2Items = _q2[0]; var setQ2Items = _q2[1];
+  var _scm = useState(INITIAL_SCM); var subColMap = _scm[0]; var setSubColMap = _scm[1];
+
+  var historyRef = useRef([]);
+  var MAX_HISTORY = 50;
+  function pushSnapshot(plp, q2, scm) {
+    var snap = { plp: JSON.parse(JSON.stringify(plp)), q2: JSON.parse(JSON.stringify(q2)), bsc: JSON.parse(JSON.stringify(scm || {})), ts: Date.now() };
+    historyRef.current = historyRef.current.concat([snap]);
+    if (historyRef.current.length > MAX_HISTORY) historyRef.current = historyRef.current.slice(historyRef.current.length - MAX_HISTORY);
+  }
+  var mountedRef = useRef(false);
+  if (!mountedRef.current) { pushSnapshot(INITIAL_PLP, [], INITIAL_SCM); mountedRef.current = true; }
+
+  function undo() {
+    var h = historyRef.current; if (h.length < 2) return;
+    h.pop(); var prev = h[h.length - 1]; setPlpItems(prev.plp); setQ2Items(prev.q2); setSubColMap(prev.bsc || {});
+  }
+  function recoverFromCrash() {
+    var h = historyRef.current;
+    if (h.length > 0) { var last = h[h.length - 1]; setPlpItems(last.plp); setQ2Items(last.q2); setSubColMap(last.bsc || {}); }
+    else { setPlpItems(INITIAL_PLP); setQ2Items([]); setSubColMap(INITIAL_SCM); }
+  }
+
+  var _qf = useState(""); var quarterFilter = _qf[0]; var setQuarterFilter = _qf[1];
+
+  var _lu = useState(function() { return new Date().toISOString(); }); var lastUpdated = _lu[0]; var setLastUpdated = _lu[1];
+  var _flash = useState(""); var flash = _flash[0]; var setFlash = _flash[1];
+  var _showImport = useState(false); var showImport = _showImport[0]; var setShowImport = _showImport[1];
+  var _importText = useState(""); var importText = _importText[0]; var setImportText = _importText[1];
+
+  var scmRef = useRef(subColMap);
+  useEffect(function() { scmRef.current = subColMap; }, [subColMap]);
+  function autoSave(plp, q2) { pushSnapshot(plp, q2, scmRef.current); setLastUpdated(new Date().toISOString()); }
+  function wrapUpdater(setter, getOther, otherIsPlp) {
+    return function(updater) {
+      setter(function(prev) {
+        var next = typeof updater === "function" ? updater(prev) : updater;
+        if (otherIsPlp) autoSave(getOther(), next); else autoSave(next, getOther());
+        return next;
+      });
+    };
+  }
+  var plpRef = useRef(plpItems); var q2Ref = useRef(q2Items);
+  useEffect(function() { plpRef.current = plpItems; }, [plpItems]);
+  useEffect(function() { q2Ref.current = q2Items; }, [q2Items]);
+  var plpUpdater = wrapUpdater(setPlpItems, function() { return q2Ref.current; }, false);
+  var q2Updater = wrapUpdater(setQ2Items, function() { return plpRef.current; }, true);
+
+  function handleCopyBackup() {
+    try {
+      var data = JSON.stringify({ plpItems: plpItems, q2Items: q2Items, subColMap: subColMap, buildSubCol: subColMap, nextId: gNextId, lastUpdated: lastUpdated }, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(data).then(function() { setFlash("Copied!"); setTimeout(function() { setFlash(""); }, 2000); }, function() { fallbackCopy(data); });
+      } else { fallbackCopy(data); }
+    } catch (e) { setFlash("Copy failed"); setTimeout(function() { setFlash(""); }, 3000); }
+  }
+  function fallbackCopy(text) {
+    try {
+      var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.left = "-9999px";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      setFlash("Copied!"); setTimeout(function() { setFlash(""); }, 2000);
+    } catch (e2) { setFlash("Copy failed"); setTimeout(function() { setFlash(""); }, 3000); }
+  }
+  function handleImport() {
+    try {
+      var parsed = JSON.parse(importText);
+      if (Array.isArray(parsed.plpItems)) setPlpItems(safeItems(parsed.plpItems));
+      if (Array.isArray(parsed.q2Items)) setQ2Items(safeItems(parsed.q2Items));
+      if (parsed.subColMap && typeof parsed.subColMap === "object") setSubColMap(parsed.subColMap);
+      else if (parsed.buildSubCol && typeof parsed.buildSubCol === "object") setSubColMap(parsed.buildSubCol);
+      if (typeof parsed.nextId === "number") gNextId = parsed.nextId;
+      pushSnapshot(Array.isArray(parsed.plpItems) ? safeItems(parsed.plpItems) : plpItems, Array.isArray(parsed.q2Items) ? safeItems(parsed.q2Items) : q2Items, parsed.subColMap || parsed.buildSubCol || subColMap);
+      setLastUpdated(new Date().toISOString()); setShowImport(false); setImportText("");
+      setFlash("Imported!"); setTimeout(function() { setFlash(""); }, 2000);
+    } catch (e) { setFlash("Invalid JSON"); setTimeout(function() { setFlash(""); }, 3000); }
+  }
+
+  useEffect(function() {
+    function onKeyDown(e) { if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); undo(); } }
+    document.addEventListener("keydown", onKeyDown);
+    return function() { document.removeEventListener("keydown", onKeyDown); };
+  }, []);
+
+  var t = new Date(lastUpdated);
+  var tsDate = (t.getMonth() + 1) + "/" + t.getDate();
+  var tsTime = t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  var boardTitles = { plp: "Projects by PLP Phase", q2: "Q2 Epics", q3: "Q3 Epics", q4: "Q4 Epics" };
+  var boardTitle = boardTitles[activeTab] || "Projects by PLP Phase";
+  var tabBase = { padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", background: "transparent", border: "none", transition: "all 0.15s" };
+
+  function tabStyle(tabId) {
+    return Object.assign({}, tabBase, { color: activeTab === tabId ? "#fff" : "#64748b", borderBottom: activeTab === tabId ? "3px solid #14b8a6" : "3px solid transparent" });
+  }
+
+  return (
+    <ErrorBoundary onRecover={recoverFromCrash}>
+      <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: "#f8fafc", minHeight: "100vh", padding: 0 }}>
+        <div style={{ background: "#0f172a", padding: "0 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 0 }}>
+            <button style={tabStyle("plp")} onClick={function() { setActiveTab("plp"); }}>PLP Board</button>
+            <button style={tabStyle("q2")} onClick={function() { setActiveTab("q2"); }}>Q2 Drill-Down</button>
+            <button style={tabStyle("q3")} onClick={function() { setActiveTab("q3"); }}>Q3 Drill-Down</button>
+            <button style={tabStyle("q4")} onClick={function() { setActiveTab("q4"); }}>Q4 Drill-Down</button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {flash && <span style={{ fontSize: 12, fontWeight: 600, color: flash === "Copied!" || flash === "Imported!" ? "#34d399" : "#f87171" }}>{flash}</span>}
+            <button onClick={undo} title="Undo (Ctrl+Z)" style={{ padding: "6px 10px", fontSize: 13, background: "#334155", color: "#94a3b8", border: "1px solid #475569", borderRadius: 4, cursor: "pointer" }}>{"↩"}</button>
+            <button onClick={handleCopyBackup} style={{ padding: "7px 14px", fontSize: 12, fontWeight: 600, background: "#334155", color: "#cbd5e1", border: "1px solid #475569", borderRadius: 5, cursor: "pointer" }}>Copy Backup</button>
+            <button onClick={function() { setShowImport(!showImport); }} style={{ padding: "7px 14px", fontSize: 12, fontWeight: 600, background: "#334155", color: "#cbd5e1", border: "1px solid #475569", borderRadius: 5, cursor: "pointer" }}>Import</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399" }} />
+              <div style={{ textAlign: "right" }}>
+                <div style={{ color: "#94a3b8", fontSize: 11, fontStyle: "italic" }}>Auto-saved {tsDate}</div>
+                <div style={{ color: "#64748b", fontSize: 10, fontStyle: "italic", marginTop: 1 }}>{tsTime}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {showImport && (
+          <div style={{ background: "#1e293b", padding: "12px 28px", borderBottom: "1px solid #334155" }}>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginBottom: 6 }}>Paste a previously copied backup JSON below:</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <textarea value={importText} onChange={function(e) { setImportText(e.target.value); }} placeholder='{"plpItems":[...],"q2Items":[...]}' style={{ flex: 1, padding: "8px 10px", fontSize: 12, fontFamily: "monospace", background: "#0f172a", color: "#e2e8f0", border: "1px solid #475569", borderRadius: 4, resize: "vertical", minHeight: 40, maxHeight: 120 }} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <button onClick={handleImport} style={{ padding: "8px 16px", fontSize: 12, fontWeight: 600, background: "#14b8a6", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Restore</button>
+                <button onClick={function() { setShowImport(false); setImportText(""); }} style={{ padding: "8px 16px", fontSize: 12, background: "#334155", color: "#94a3b8", border: "1px solid #475569", borderRadius: 4, cursor: "pointer" }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ background: "#1e293b", padding: "16px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span style={{ color: "#34d399", fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>Engage</span>
+            <span style={{ color: "#fff", fontSize: 22, fontWeight: 600 }}>{boardTitle}</span>
+          </div>
+          {activeTab === "plp" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {quarterFilter && (
+                <button onClick={function() { setQuarterFilter(""); }}
+                  style={{ padding: "5px 10px", fontSize: 11, fontWeight: 600, background: "#334155", color: "#94a3b8", border: "1px solid #475569", borderRadius: 4, cursor: "pointer" }}>
+                  Clear
+                </button>
+              )}
+              <select value={quarterFilter} onChange={function(e) { setQuarterFilter(e.target.value); }}
+                style={{
+                  padding: "6px 12px", fontSize: 13, fontWeight: 600, borderRadius: 5, cursor: "pointer",
+                  background: quarterFilter ? (QUARTERS.find(function(q) { return q.value === quarterFilter; }) || {}).bg || "#334155" : "#334155",
+                  color: quarterFilter ? (QUARTERS.find(function(q) { return q.value === quarterFilter; }) || {}).text || "#cbd5e1" : "#cbd5e1",
+                  border: quarterFilter ? "1.5px solid " + ((QUARTERS.find(function(q) { return q.value === quarterFilter; }) || {}).border || "#475569") : "1px solid #475569",
+                }}>
+                <option value="" style={{ background: "#1e293b", color: "#cbd5e1" }}>All Quarters</option>
+                <option value="Q1" style={{ background: "#1e293b", color: "#cbd5e1" }}>Q1</option>
+                <option value="Q2" style={{ background: "#1e293b", color: "#cbd5e1" }}>Q2</option>
+                <option value="Q3" style={{ background: "#1e293b", color: "#cbd5e1" }}>Q3</option>
+                <option value="Q4" style={{ background: "#1e293b", color: "#cbd5e1" }}>Q4</option>
+              </select>
+            </div>
+          )}
+        </div>
+        {activeTab === "plp" && <PLPBoard items={plpItems} updateItems={plpUpdater} quarterFilter={quarterFilter} />}
+        {activeTab === "q2" && <DrillDownBoard quarter="Q2" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
+        {activeTab === "q3" && <DrillDownBoard quarter="Q3" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
+        {activeTab === "q4" && <DrillDownBoard quarter="Q4" plpItems={plpItems} updatePlpItems={plpUpdater} subColMap={subColMap} setSubColMap={setSubColMap} />}
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary onRecover={function() {}}>
+      <AppInner />
+    </ErrorBoundary>
+  );
+}
