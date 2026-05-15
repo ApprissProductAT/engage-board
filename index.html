@@ -93,35 +93,56 @@ var Q2_LANES = [
 ];
 
 var INITIAL_PLP = [
-  { id: "p2", month: "TBD", name: "Decision Studio 2.0: Status Totals", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p3", month: "TBD", name: "Engage Insights 2.0", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p4", month: "TBD", name: "Platform Friction: Navigation & Taxonomy", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p5", month: "TBD", name: "Platform Friction: Loading Times", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p11", month: "JULY", name: "Engage Insights: Claims Metrics", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-372" },
-  { id: "p9", month: "JULY", name: "Decision Studio: Custom Messaging", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p10", month: "JULY", name: "Decision Studio: Call Center Scripts", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p13", month: "JULY", name: "Decision Studio: Custom Rules", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p14", month: "JULY", name: "Remaining Portal Items: TBD", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p15", month: "AUGUST", name: "Engage Portal Decomm", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "102", month: "JULY", name: "Claims Automation (Gap Inc.)", phase: "why", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p16", month: "MAY", name: "Consumer Alerts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
-  { id: "p18", month: "JUNE", name: "Engage Insights 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Finalize scope & GTM plan; finish Linking 2.0", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
-  { id: "p17", month: "MAY", name: "Consumer Watching", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
+  { id: "110", month: "TBD", name: "Return Reasons", phase: "what", quarter: "Q4", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-373" },
+  { id: "115", month: "TBD", name: "Product Analytics: Advanced Tracking Enhancements (Pendo)", phase: "what", quarter: "Q4", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-704" },
+  { id: "118", month: "TBD", name: "Engage Insights Simultation", phase: "what", quarter: "Q4", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-389" },
+  { id: "104", month: "JULY", name: "[Pot. Q4] Engage Preview for Secure", phase: "when", quarter: "Q4", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-371" },
   { id: "p12", month: "JUNE", name: "Linking 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-706" },
-  { id: "p19", month: "JUNE", name: "Engage Metrics 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "" },
-  { id: "p20", month: "JUNE", name: "Consumer Search", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "" },
-  { id: "101", month: "JUNE", name: "Streamline Engage Implementations", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-473" },
-  { id: "100", month: "JUNE", name: "Engage Preview for Secure", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-371" },
-  { id: "p6", month: "JUNE", name: "Decision Studio: SKU Based Policies", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p7", month: "JUNE", name: "Decision Studio: Flagged Consumers", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p8", month: "JUNE", name: "Decision Studio: Flagged Receipts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-381" },
-  { id: "p1", month: "TBD", name: "Decision Studio 2.0: Landing Page/ Dashboard", phase: "what", quarter: "", row: "on-track", exitCriteria: "", jiraLink: "" },
-  { id: "p21", month: "JUNE", name: "Disputes Management 2.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
+  { id: "p19", month: "JUNE", name: "Engage Returns Metrics 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "p11", month: "JUNE", name: "Engage Claims Metrics 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "p20", month: "JUNE", name: "Consumer Search", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Solve navigation & ensure enough feedback", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "p21", month: "JUNE", name: "DM 2.0: Disputes Manager", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
+  { id: "p16", month: "JUNE", name: "Consumer Alerts", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
+  { id: "117", month: "MAY", name: "Data Facteus Phase 2", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-712" },
+  { id: "116", month: "JUNE", name: "Dataverse Q2", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-711" },
+  { id: "p18", month: "JUNE", name: "Engage Insights 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "Finalize scope & GTM plan; finish Linking 2.0", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "103", month: "JUNE", name: "DM 2.0 Disputes Submission Portal", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-722" },
+  { id: "105", month: "JUNE", name: "Consumer Profile 1.0", phase: "build", quarter: "Q2", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-724" },
+  { id: "p7", month: "JULY", name: "Decision Studio: Flagged Consumers", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p8", month: "JULY", name: "Decision Studio: Flagged Receipts", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p6", month: "JULY", name: "Decision Studio: SKU Based Policies", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p2", month: "TBD", name: "Decision Studio: Status Totals", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p17", month: "JULY", name: "Consumer Watching", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "Dependent on Linking 2.0 and Engage Insights", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-725" },
+  { id: "101", month: "TBD", name: "Streamline Engage Implementations: Config to Platform", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-473" },
+  { id: "102", month: "JULY", name: "Claims Automation (Gap Inc.)", phase: "why", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "113", month: "JULY", name: "Engage Insights Q3 Enhancements", phase: "what", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-743" },
+  { id: "111", month: "JULY", name: "Disputes Manager Q3 Enhancements", phase: "what", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-738" },
+  { id: "112", month: "JULY", name: "Dispute Submission Portal Q3 Enhancements", phase: "what", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-739" },
+  { id: "109", month: "TBD", name: "Decision Explainer", phase: "why", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-354" },
+  { id: "p4", month: "AUGUST", name: "Platform Friction: Navigation & Taxonomy", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-744" },
+  { id: "p14", month: "AUGUST", name: "Legacy Engage Portal Feature Parity Q3", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-728" },
+  { id: "p15", month: "AUGUST", name: "Engage Portal Decomm", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "" },
+  { id: "106", month: "TBD", name: "Engage Core Returns Model", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-356" },
+  { id: "107", month: "TBD", name: "Engage Claims Model", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-355" },
+  { id: "108", month: "TBD", name: "Engage Consortium Model", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-357" },
+  { id: "114", month: "TBD", name: "Streamline Engage Implementations: Support & Rollout", phase: "when", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-474" },
+  { id: "p9", month: "AUGUST", name: "Decision Studio: Custom Messaging", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p10", month: "AUGUST", name: "Decision Studio: Call Center Scripts", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p13", month: "AUGUST", name: "Decision Studio: Custom Rules", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
+  { id: "p1", month: "TBD", name: "Decision Studio: Landing Page/ Dashboard", phase: "build", quarter: "Q3", row: "on-track", exitCriteria: "", jiraLink: "https://trebuco.atlassian.net/browse/PRODUCT-740" },
 ];
 
-var INITIAL_SCM = {"100":"design","101":"gathering-reqs","p16":"writing-reqs","p17":"gathering-reqs","p21":"writing-reqs","p12":"development","p18":"gathering-reqs","p19":"gathering-reqs","p20":"gathering-reqs","p11":"gathering-reqs","p6":"design","p7":"design","p8":"design"};
+var INITIAL_SCM = {"100":"design","101":"gathering-reqs","102":"new","103":"design","105":"writing-reqs","106":"roadmap-approved","107":"roadmap-approved","108":"roadmap-approved","109":"approved","111":"new","112":"new","113":"new","114":"roadmap-approved","116":"development","117":"development","p16":"development","p17":"gathering-reqs","p21":"development","p12":"development","p18":"writing-reqs","p19":"gathering-reqs","p20":"gathering-reqs","p11":"gathering-reqs","p6":"design","p7":"design","p8":"design","p4":"lt-alignment","p15":"roadmap-approved","p14":"roadmap-approved","p9":"gathering-reqs","p10":"gathering-reqs","p13":"gathering-reqs","p2":"design","p1":"gathering-reqs"};
 
-var gNextId = 103;
+function calcNextId(items) {
+  var max = 0;
+  for (var i = 0; i < items.length; i++) {
+    var n = parseInt(items[i].id, 10);
+    if (!isNaN(n) && n >= max) max = n + 1;
+  }
+  return max < 100 ? 100 : max;
+}
+var gNextId = calcNextId(INITIAL_PLP);
 
 // ═══════════════════════════════════════════════════════════════════
 // SAFEGUARD 4: Defensive rendering
@@ -550,7 +571,10 @@ function DrillDownBoard(props) {
   function parseCellKey(key) { var p = key.split(":"); return { phase: p[0], subCol: p[1] }; }
 
   function getSubCol(item) {
-    return subColMap[item.id] || "new";
+    var mapped = subColMap[item.id] || "new";
+    var validCols = DRILL_SUBCOLS[item.phase];
+    if (validCols && !validCols.some(function(c) { return c.id === mapped; })) return "new";
+    return mapped;
   }
 
   function toggleCollapse(phaseId) {
@@ -728,7 +752,8 @@ function AppInner() {
   // Load saved data from localStorage on mount
   var saved = null;
   try { saved = JSON.parse(localStorage.getItem("engageBoardData")); } catch(e) {}
-  if (saved && typeof saved.nextId === "number") { gNextId = saved.nextId; }
+  if (saved && Array.isArray(saved.plpItems)) { gNextId = calcNextId(safeItems(saved.plpItems)); }
+  else if (saved && typeof saved.nextId === "number" && saved.nextId > gNextId) { gNextId = saved.nextId; }
 
   var _tab = useState("plp"); var activeTab = _tab[0]; var setActiveTab = _tab[1];
   var _plp = useState(saved && Array.isArray(saved.plpItems) ? safeItems(saved.plpItems) : INITIAL_PLP); var plpItems = _plp[0]; var setPlpItems = _plp[1];
@@ -812,7 +837,8 @@ function AppInner() {
       if (Array.isArray(parsed.q2Items)) setQ2Items(safeItems(parsed.q2Items));
       if (parsed.subColMap && typeof parsed.subColMap === "object") setSubColMap(parsed.subColMap);
       else if (parsed.buildSubCol && typeof parsed.buildSubCol === "object") setSubColMap(parsed.buildSubCol);
-      if (typeof parsed.nextId === "number") gNextId = parsed.nextId;
+      if (Array.isArray(parsed.plpItems)) { gNextId = calcNextId(safeItems(parsed.plpItems)); }
+      else if (typeof parsed.nextId === "number" && parsed.nextId > gNextId) { gNextId = parsed.nextId; }
       pushSnapshot(Array.isArray(parsed.plpItems) ? safeItems(parsed.plpItems) : plpItems, Array.isArray(parsed.q2Items) ? safeItems(parsed.q2Items) : q2Items, parsed.subColMap || parsed.buildSubCol || subColMap);
       setLastUpdated(new Date().toISOString()); setShowImport(false); setImportText("");
       setFlash("Imported!"); setTimeout(function() { setFlash(""); }, 2000);
